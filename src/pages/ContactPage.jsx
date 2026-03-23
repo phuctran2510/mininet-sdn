@@ -58,7 +58,7 @@ export default function ContactPage() {
             { icon: '📧', label: 'Email', value: 'phuctv@dlu.edu.vn', href: 'mailto:phuctv@dlu.edu.vn' },
             { icon: '📱', label: 'Điện thoại', value: '0976 353 605', href: 'tel:+84976353605' },
             { icon: '🏫', label: 'Trường', value: 'Đại học Đà Lạt', href: 'https://dlu.edu.vn' },
-            { icon: '📍', label: 'Địa chỉ', value: '1 Phù Đổng Thiên Vương, Đà Lạt', href: '#' },
+            { icon: '📍', label: 'Địa chỉ', value: '1 Phù Đổng Thiên Vương, Phường Lâm Viên-Đà Lạt', href: '#' },
           ].map(({ icon, label, value, href }) => (
             <a key={label} href={href} target={href.startsWith('http') ? '_blank' : '_self'} rel="noopener noreferrer"
               style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 12, background: '#ffffff0a', border: '1px solid #ffffff14', borderRadius: 10, padding: '14px 16px' }}>
