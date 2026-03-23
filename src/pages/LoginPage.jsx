@@ -100,12 +100,7 @@ export default function LoginPage({ onClose }) {
           background: '#0c4a6e22', border: '1px solid #0369a133',
           borderRadius: 8,
         }}>
-          <div style={{ color: '#38bdf8', fontSize: 11, fontWeight: 600, marginBottom: 4 }}>
-            💡 Tài khoản demo
-          </div>
-          <div style={{ color: '#7dd3fc', fontSize: 12 }}>
-            Username: <strong>phuctv</strong> · Password: <strong>dlu@2024</strong>
-          </div>
+          
         </div>
       </div>
     </div>
