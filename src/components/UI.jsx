@@ -1,141 +1,91 @@
-import { useState } from 'react';
+export function Render({ md }) {
+  if (!md) return null
+  const lines = md.trim().split('\n')
+  const out = []
+  let i = 0
+  while (i < lines.length) {
+    const l = lines[i]
+    if (l.startsWith('```')) {
+      const lang = l.slice(3).trim() || 'bash'
+      const code = []
+      i++
+      while (i < lines.length && !lines[i].startsWith('```')) { code.push(lines[i]); i++ }
+      out.push(<pre key={i} data-lang={lang}><code style={{color:'#9ab'}}>{code.join('\n')}</code></pre>)
+      i++; continue
+    }
+    if (l.startsWith('|')) {
+      const rows = []
+      while (i < lines.length && lines[i].startsWith('|')) {
+        if (!lines[i].includes('---')) rows.push(lines[i].split('|').filter(Boolean).map(c => c.trim()))
+        i++
+      }
+      const [hd, ...bd] = rows
+      out.push(<div key={i} className="tw" style={{margin:'.8rem 0'}}><table>
+        <thead><tr>{hd.map((h,j)=><th key={j}>{ri(h)}</th>)}</tr></thead>
+        <tbody>{bd.map((r,ri_)=><tr key={ri_}>{r.map((c,ci)=><td key={ci}>{ri(c)}</td>)}</tr>)}</tbody>
+      </table></div>)
+      continue
+    }
+    if (l.startsWith('## ')) { out.push(<h2 key={i} style={{fontFamily:'var(--fm)',fontSize:'1.15rem',color:'var(--acc)',margin:'1.3rem 0 .6rem',borderBottom:'1px solid var(--brd)',paddingBottom:'.35rem'}}>{l.slice(3)}</h2>); i++; continue }
+    if (l.startsWith('### ')) { out.push(<h3 key={i} style={{fontFamily:'var(--fm)',fontSize:'1rem',color:'var(--txt)',margin:'1rem 0 .45rem'}}>{ri(l.slice(4))}</h3>); i++; continue }
+    if (l.startsWith('#### ')) { out.push(<h4 key={i} style={{fontSize:'.9rem',color:'var(--txt2)',margin:'.8rem 0 .35rem',fontWeight:600}}>{ri(l.slice(5))}</h4>); i++; continue }
+    if (l.startsWith('> ')) { out.push(<div key={i} className="alert ai" style={{fontStyle:'italic'}}>{ri(l.slice(2))}</div>); i++; continue }
+    if (l.trim() === '---') { out.push(<div key={i} className="divider"/>); i++; continue }
+    if (l.match(/^[-*] /)) {
+      const items = []
+      while (i < lines.length && lines[i].match(/^[-*] /)) { items.push(lines[i].slice(2)); i++ }
+      out.push(<ul key={i} className="ul">{items.map((it,j)=><li key={j}>{ri(it)}</li>)}</ul>)
+      continue
+    }
+    if (l.match(/^\d+\. /)) {
+      const items = []
+      while (i < lines.length && lines[i].match(/^\d+\. /)) { items.push(lines[i].replace(/^\d+\. /,'')); i++ }
+      out.push(<ol key={i} className="ol">{items.map((it,j)=><li key={j}>{ri(it)}</li>)}</ol>)
+      continue
+    }
+    if (l.trim() === '') { i++; continue }
+    out.push(<p key={i} style={{color:'var(--txt2)',margin:'.3rem 0 .7rem',fontSize:'.88rem',lineHeight:1.75}}>{ri(l)}</p>)
+    i++
+  }
+  return <div>{out}</div>
+}
 
-export function CodeBlock({ code }) {
-  const [copied, setCopied] = useState(false);
+function ri(text) {
+  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`|\[.*?\]\(.*?\))/)
+  return parts.map((p, i) => {
+    if (p.startsWith('**') && p.endsWith('**')) return <strong key={i} style={{color:'var(--txt)',fontWeight:600}}>{p.slice(2,-2)}</strong>
+    if (p.startsWith('`') && p.endsWith('`')) return <code key={i}>{p.slice(1,-1)}</code>
+    if (p.match(/\[.*?\]\(.*?\)/)) {
+      const [,label,url] = p.match(/\[(.*?)\]\((.*?)\)/)
+      return <a key={i} href={url} target="_blank" rel="noopener" style={{color:'var(--acc)',textDecoration:'none'}}>{label}</a>
+    }
+    return p
+  })
+}
+
+export function PageHdr({ icon, title, sub }) {
   return (
-    <div style={{ position: 'relative', margin: '12px 0' }}>
-      <pre style={{
-        background: '#080c18', color: '#e2e8f0',
-        borderRadius: 10, padding: '16px 20px 16px 16px',
-        fontSize: 12.5, lineHeight: 1.65, overflowX: 'auto',
-        margin: 0, border: '1px solid #1e293b',
-        fontFamily: "'JetBrains Mono','Fira Code',monospace",
-        whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-      }}>
-        <code>{code}</code>
-      </pre>
-      <button onClick={() => { navigator.clipboard.writeText(code).catch(() => {}); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-        style={{
-          position: 'absolute', top: 8, right: 8,
-          background: copied ? '#10b981' : '#1e293b',
-          color: '#e2e8f0', border: 'none', borderRadius: 6,
-          padding: '3px 10px', fontSize: 11, cursor: 'pointer', transition: 'all 0.2s',
-        }}>
-        {copied ? '✓ Copied' : 'Copy'}
-      </button>
+    <div className="fu" style={{marginBottom:'1.8rem'}}>
+      <h1 style={{fontFamily:'var(--fm)',fontSize:'clamp(1.4rem,3.5vw,1.9rem)',display:'flex',alignItems:'center',gap:'.45rem'}}>
+        <span>{icon}</span><span className="gt">{title}</span>
+      </h1>
+      {sub && <p style={{color:'var(--txt3)',marginTop:'.35rem',fontSize:'.88rem'}}>{sub}</p>}
     </div>
-  );
+  )
 }
 
-export function Badge({ text, color }) {
-  return (
-    <span style={{
-      display: 'inline-block',
-      background: color + '22', color,
-      border: `1px solid ${color}55`,
-      borderRadius: 20, padding: '2px 10px',
-      fontSize: 11, fontWeight: 600, letterSpacing: 0.3,
-    }}>{text}</span>
-  );
+export function Diff({ level }) {
+  const m = {beginner:{c:'b-green',t:'Cơ bản'},intermediate:{c:'b-blue',t:'Trung bình'},advanced:{c:'b-pur',t:'Nâng cao'},easy:{c:'b-green',t:'Dễ'},medium:{c:'b-org',t:'Trung bình'},hard:{c:'b-red',t:'Khó'}}
+  const d = m[level] || {c:'b-blue',t:level}
+  return <span className={`badge ${d.c}`}>{d.t}</span>
 }
 
-export function Modal({ title, onClose, children }) {
+export function Stat({ icon, val, lbl, col }) {
   return (
-    <div style={{
-      position: 'fixed', inset: 0, background: '#000000cc',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      zIndex: 1000, padding: 20,
-    }} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{
-        background: '#0a0f1e', border: '1px solid #334155',
-        borderRadius: 14, width: '100%', maxWidth: 700,
-        maxHeight: '90vh', overflow: 'hidden',
-        display: 'flex', flexDirection: 'column',
-      }}>
-        <div style={{
-          padding: '18px 24px', borderBottom: '1px solid #1e293b',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        }}>
-          <span style={{ color: '#f1f5f9', fontWeight: 700, fontSize: 16 }}>{title}</span>
-          <button onClick={onClose} style={{
-            background: '#1e293b', border: 'none', color: '#94a3b8',
-            borderRadius: 6, width: 30, height: 30, cursor: 'pointer', fontSize: 16,
-          }}>×</button>
-        </div>
-        <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1 }}>
-          {children}
-        </div>
-      </div>
+    <div className="card" style={{padding:'1.1rem',textAlign:'center'}}>
+      <div style={{fontSize:'1.6rem',marginBottom:'.25rem'}}>{icon}</div>
+      <div style={{fontFamily:'var(--fm)',fontSize:'1.5rem',fontWeight:800,color:col||'var(--acc)'}}>{val}</div>
+      <div style={{fontSize:'.75rem',color:'var(--txt3)',marginTop:'.15rem'}}>{lbl}</div>
     </div>
-  );
-}
-
-export function FormField({ label, required, children }) {
-  return (
-    <div style={{ marginBottom: 14 }}>
-      <label style={{ display: 'block', color: '#94a3b8', fontSize: 12, fontWeight: 600, marginBottom: 6, letterSpacing: 0.5 }}>
-        {label} {required && <span style={{ color: '#ef4444' }}>*</span>}
-      </label>
-      {children}
-    </div>
-  );
-}
-
-export const inputStyle = {
-  width: '100%', background: '#0f172a', border: '1px solid #334155',
-  borderRadius: 8, padding: '9px 12px', color: '#e2e8f0',
-  fontSize: 13, outline: 'none', fontFamily: "'Inter',sans-serif",
-};
-
-export const textareaStyle = {
-  ...inputStyle, minHeight: 100, resize: 'vertical',
-  fontFamily: "'JetBrains Mono','Fira Code',monospace", fontSize: 12,
-};
-
-export function Select({ value, onChange, options, style = {} }) {
-  return (
-    <select value={value} onChange={e => onChange(e.target.value)}
-      style={{ ...inputStyle, ...style, cursor: 'pointer' }}>
-      {options.map(o => (
-        <option key={o.value} value={o.value}>{o.label}</option>
-      ))}
-    </select>
-  );
-}
-
-export function Btn({ children, onClick, color = '#6366f1', variant = 'fill', size = 'md', style: s = {} }) {
-  const pad = size === 'sm' ? '5px 12px' : size === 'lg' ? '12px 24px' : '8px 16px';
-  const fs = size === 'sm' ? 11 : size === 'lg' ? 15 : 13;
-  const base = variant === 'fill'
-    ? { background: color, color: '#fff', border: 'none' }
-    : { background: color + '15', color, border: `1px solid ${color}44` };
-  return (
-    <button onClick={onClick} style={{
-      ...base, borderRadius: 8, padding: pad, fontSize: fs,
-      fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', ...s,
-    }}>{children}</button>
-  );
-}
-
-export function EmptyState({ icon = '📂', text }) {
-  return (
-    <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-      <div style={{ fontSize: 40, marginBottom: 12 }}>{icon}</div>
-      <div style={{ color: '#475569', fontSize: 14 }}>{text}</div>
-    </div>
-  );
-}
-
-export function SectionHeader({ title, count, onAdd, addLabel = '+ Thêm mới', color = '#6366f1' }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <h2 style={{ color: '#f1f5f9', fontSize: 20, margin: 0 }}>{title}</h2>
-        {count !== undefined && (
-          <Badge text={`${count} mục`} color={color} />
-        )}
-      </div>
-      {onAdd && <Btn onClick={onAdd} color={color}>{addLabel}</Btn>}
-    </div>
-  );
+  )
 }
